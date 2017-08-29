@@ -50,3 +50,15 @@ EOF
 mkswap /dev/xvdb2>/tmp/swapon.1
 swapuuid=`grep UUID /tmp/swapon.1|cut -f2 -d =`
 swapon -U ${swapuuid}
+echo "UUID=$swapuuid    swap		swap    defaults        0 0">>/etc/fstab
+
+
+##Mount /u01
+mkfs.ext4  /dev/xvdb1
+createpv /dev/xvdb1
+vgcreate vgu01 /dev/xvdb1
+lvcreate -L 100G -n lvu01 vgu01
+mkfs.ext4 /dev/vgu01/lvu01
+
+echo "/dev/mapper/vgu01-lvu01   /u01 		ext4 		defaults	0 0">>/etc/fstab
+mount -a
