@@ -66,7 +66,7 @@ echo "UUID=$swapuuid    swap		swap    defaults        0 0">>/etc/fstab
 
 
 ##Mount /u01
-createpv /dev/xvdb1
+pvcreate /dev/xvdb1
 vgcreate vgu01 /dev/xvdb1
 lvcreate -L 100G -n lvu01 vgu01
 mkfs.ext4 /dev/vgu01/lvu01
@@ -84,5 +84,6 @@ if [ "$v_storage_type" = "File System" ]; then
 	$SCREATEDBMOUNT "/dev/xvdd1" FRA $v_frasize
 else
 ##call script to create data and fra disks
+echo " "
 fi
 
