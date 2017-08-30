@@ -7,7 +7,7 @@ declare SCREATEDBMOUNT="$SCRIPT_DIR/createdbmounts.sh"
 
 declare GIT_BASE="https://raw.githubusercontent.com/praveengoutia/aws-oracle/master"
 declare PREINSTALL_11G="http://dfworacle1.racscan.com/Linux/x86-64/11gR2/preinstall/oracle-rdbms-server-11gR2-preinstall-1.0-1.el6.x86_64.rpm"
-declare PREINSTALL_12C="http://dfworacle1.racscan.com/Linux/x86-64/11gR2/preinstall/oracle-rdbms-server-11gR2-preinstall-1.0-1.el6.x86_64.rpm"
+declare PREINSTALL_12C="http://dfworacle1.racscan.com/Linux/x86-64/12cR1/preinstall/oracle-rdbms-server-12cR1-preinstall-1.0-1.el6.x86_64.rpm  "
 
 
 declare REPOUSER=`grep CFANREPOUSER $INPUTPARAMFILE|cut -f2 -d ':'` 
@@ -93,10 +93,12 @@ echo " "
 fi
 
 ##Install rpm
+yum update -y
 v_oracle_version=`grep CFADDBVERSION $INPUTPARAMFILE|cut -f2 -d ':'` 
 if [ "$v_oracle_version" = "Oracle 11.2.0.4 Enterprise Edition" -o "$v_oracle_version" = "Oracle 11.2.0.4 Standard Edition" ]; then
 	wget --http-user=$REPOUSER --http-password=$REPOPWD $PREINSTALL_11G
-	yum update -y
 	yum install oracle-rdbms-server-11gR2-preinstall-1.0-1.el6.x86_64.rpm -y --nogpgcheck --disableexcludes=all
+else
+	wget --http-user=$REPOUSER --http-password=$REPOPWD $PREINSTALL_12C
+	yum install oracle-rdbms-server-12cR1-preinstall-1.0-1.el6.x86_64.rpm -y --nogpgcheck --disableexcludes=all
 fi
-
