@@ -5,10 +5,15 @@ declare SCRIPT_DIR="/root/rsoradba"
 declare INPUTPARAMFILE="$SCRIPT_DIR/inputparameters.txt"
 declare SCREATEDBMOUNT="$SCRIPT_DIR/createdbmounts.sh"
 
-declare URL_BASE="https://raw.githubusercontent.com/praveengoutia/aws-oracle/master"
+declare GIT_BASE="https://raw.githubusercontent.com/praveengoutia/aws-oracle/master"
+declare PREINSTALL_11G="http://dfworacle1.racscan.com/Linux/x86-64/11gR2/preinstall/oracle-rdbms-server-11gR2-preinstall-1.0-1.el6.x86_64.rpm"
+declare PREINSTALL_12C="http://dfworacle1.racscan.com/Linux/x86-64/11gR2/preinstall/oracle-rdbms-server-11gR2-preinstall-1.0-1.el6.x86_64.rpm"
 
-## Download required scripts
-wget "$URL_BASE/createdbmounts.sh"
+
+declare REPOUSER=`grep CFANREPOUSER $INPUTPARAMFILE|cut -f2 -d ':'` 
+declare REPOPWD=`grep CFAOREPOPASSWD $INPUTPARAMFILE|cut -f2 -d ':'` 
+
+wget "$GIT_BASE/createdbmounts.sh"
 chmod 755 "$SCREATEDBMOUNT" 
 
 ##Format disk xvdb
@@ -85,5 +90,13 @@ if [ "$v_storage_type" = "File System" ]; then
 else
 ##call script to create data and fra disks
 echo " "
+fi
+
+##Install rpm
+v_oracle_version=`grep CFADDBVERSION $INPUTPARAMFILE|cut -f2 -d ':'` 
+if [ "$v_oracle_version" = "Oracle 11.2.0.4 Enterprise Edition" -o "$v_oracle_version" = "Oracle 11.2.0.4 Standard Edition" ]; then
+	wget --http-user=$REPOUSER --http-password=$REPOPWD $PREINSTALL_11G
+	yum update -y
+	yum install oracle-rdbms-server-11gR2-preinstall-1.0-1.el6.x86_64.rpm -y --nogpgcheck --disableexcludes=all
 fi
 
