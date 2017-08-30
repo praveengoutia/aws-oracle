@@ -12,7 +12,7 @@ lvdiskname=$mountpointname"_lv"
 mkdir "/$mountpointname"
 
 ##Mount /u01
-createpv $diskname
+pvcreate $diskname
 vgcreate $volgrpname $diskname
 lvcreate -L $vsize"G" -n $lvdiskname $volgrpname
 mkfs.ext4 /dev/$volgrpname/$lvdiskname
