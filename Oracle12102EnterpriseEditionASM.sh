@@ -1,0 +1,1 @@
+#Oracle12102EnterpriseEditionASM.sh
