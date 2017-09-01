@@ -9,4 +9,6 @@ declare GIT_BASE="https://github.com/praveengoutia/aws-oracle"
 cd $SCRIPT_DIR
 $GIT clone $GIT_BASE
 
+chmod 755 $INSTALL_SCRIPT
+
 $INSTALL_SCRIPT
