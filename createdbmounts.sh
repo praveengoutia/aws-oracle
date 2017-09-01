@@ -3,7 +3,7 @@
 #
 ###
 
-diskname=$1
+diskname="$1"1
 mountpointname=$2
 volgrpname=$mountpointname"_vg"
 lvdiskname=$mountpointname"_lv"
