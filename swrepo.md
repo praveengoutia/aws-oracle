@@ -30,3 +30,11 @@ RDBMS2|Oracle11204EnterpriseEditionFileSystem|http://dfworacle1.racscan.com/Linu
 RDBMS2|Oracle11204StandardEditionFileSystem|http://dfworacle1.racscan.com/Linux/x86-64/11gR2/11.2.0.4.0/p13390677_112040_Linux-x86-64_2of7_database_2.zip|el6.x86_64
 RDBMS2|Oracle12102EnterpriseEditionFileSystem|http://dfworacle1.racscan.com/Linux/x86-64/12cR1/12.1.0.2.0/linuxamd64_12102_database_2of2.zip|el6.x86_64
 RDBMS2|Oracle12102StandardEditionFileSystem|http://dfworacle1.racscan.com/Linux/x86-64/12cR1/12.1.0.2.0/linuxamd64_12102_database_se2_2of2.zip|el6.x86_64
+GIBASEDIR|Oracle12102|/u01/app/grid
+ORACLEBASEDIR|Oracle12102|/u01/app/oracle
+GIHOMEDIR|Oracle12102|/u01/app/grid/12.1.0.2
+ORACLEHOMEDIR|Oracle12102|/u01/app/oracle/product/12.1.0.2/dbhome_1
+GIBASEDIR|Oracle11204|/u01/app/grid
+ORACLEBASEDIR|Oracle11204|/u01/app/oracle
+GIHOMEDIR|Oracle11204|/u01/app/grid/11.2.0.4
+ORACLEHOMEDIR|Oracle11204|/u01/app/oracle/product/11.2.0.4/dbhome_1
