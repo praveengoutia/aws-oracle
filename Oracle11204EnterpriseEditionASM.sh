@@ -1,4 +1,9 @@
+#!/bin/sh
+set -x
+
 #Oracle11204EnterpriseEditionASM.sh
+
+
 declare YUM=/usr/bin/yum
 declare WGET=/usr/bin/wget
 declare GIT=/usr/bin/git
@@ -10,6 +15,7 @@ declare GIT_DIR="$SCRIPT_DIR/aws-oracle"
 #declare INSTALLCODE="Oracle11204EnterpriseEditionASM"
 declare INPUTPARAMFILE="$SCRIPT_DIR/inputparameters.txt"
 declare SCREATEDBMOUNT="$GIT_DIR/createdbmounts.sh"
+declare SOFTWAREREPOMD="$GIT_DIR/swrepo.md"
 
 declare CFPARAM_ORAVERSION=`grep CFADDBVERSION $INPUTPARAMFILE|cut -f2 -d ':'` 
 declare CFPARAM_ORASTORAGETYPE=`grep CFAESTORAGETYPE $INPUTPARAMFILE|cut -f2 -d ':'` 
@@ -53,8 +59,8 @@ declare FRADG_NAME="FRA"
 $YUM update -y
 
 #Download and install Pre-install rpm
-v_preinstall_link=`grep $INSTALLCODE $GIT_DIR/swrepo.md|grep PREINSTALL|grep $LINUX_KERNEL|cut -f3 -d |`
-v_rpm_name=`echo $v_preinstall_link|rev|cut -f1 d '/'|rev`
+v_preinstall_link=`grep $INSTALLCODE $SOFTWAREREPOMD|grep PREINSTALL|grep $LINUX_KERNEL|cut -f3 -d "|"`
+v_rpm_name=`echo $v_preinstall_link|rev|cut -f1 -d '/'|rev`
 $WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $v_preinstall_link
 
 $YUM install $v_rpm_name -y --nogpgcheck --disableexcludes=all
@@ -104,6 +110,24 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${DEVU01}
   q # and we're done
 EOF
 
+
+##Create Swap
+mkswap "$DEVSWAP">/tmp/swapon.1
+swapuuid=`grep UUID /tmp/swapon.1|cut -f2 -d =`
+swapon -U ${swapuuid}
+echo "UUID=$swapuuid    swap		swap    defaults        0 0">>/etc/fstab
+
+
+##Mount /u01
+pvcreate "$DEVU01"1
+vgcreate vgu01 "$DEVU01"1
+lvcreate -L 100G -n lvu01 vgu01
+mkfs.ext4 /dev/vgu01/lvu01
+mkdir /u01
+echo "/dev/mapper/vgu01-lvu01   /u01 		ext4 		defaults	0 0">>/etc/fstab
+mount -a
+
+
 ##DEVDATA="/dev/xvdc"
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${DEVDATA}
   o # clear the in memory partition table
@@ -148,27 +172,27 @@ echo "`head $SCRIPT_DIR/local-ipv4`     $HOSTNAME">>/etc/hosts
 
 ##Download software
 if [ "$CFPARAM_ORASTORAGETYPE" = "ASM" ]; then
-	GIZIP1=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep GRID1|cut -f3 -d |`
-	GIZIP1_NAME=`echo $GIZIP1|rev|cut -f1 d '/'|rev`
+	GIZIP1=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep GRID1|cut -f3 -d "|"`
+	GIZIP1_NAME=`echo $GIZIP1|rev|cut -f1 -d '/'|rev`
 	$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $GIZIP1 -O $SCRIPT_DIR/$GIZIP1_NAME
 	
-	GIZIP2=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep GRID2|cut -f3 -d |`
-	GIZIP2_NAME=`echo $GIZIP1|rev|cut -f1 d '/'|rev`
+	GIZIP2=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep GRID2|cut -f3 -d "|"`
+	GIZIP2_NAME=`echo $GIZIP2|rev|cut -f1 -d '/'|rev`
 	$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $GIZIP2 -O $SCRIPT_DIR/$GIZIP2_NAME	
 	cd $SCRIPT_DIR
 	$UNZIP $GIZIP1_NAME
 	$UNZIP $GIZIP2_NAME	
 fi
 
-	RDBMSZIP1=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS1|cut -f3 -d |`
-	RDBMSZIP1_NAME=`echo $RDBMSZIP1|rev|cut -f1 d '/'|rev`
-	$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP1 -O $SCRIPT_DIR/$RDBMSZIP1_NAME
-	
-	RDBMSZIP2=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS2|cut -f3 -d |`
-	RDBMSZIP2_NAME=`echo $RDBMSZIP1|rev|cut -f1 d '/'|rev`
-	$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP2 -O $SCRIPT_DIR/$RDBMSZIP2_NAME	
-	cd $SCRIPT_DIR
-	$UNZIP $RDBMSZIP1_NAME
-	$UNZIP $RDBMSZIP2_NAME
+RDBMSZIP1=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS1|cut -f3 -d "|"`
+RDBMSZIP1_NAME=`echo $RDBMSZIP1|rev|cut -f1 -d '/'|rev`
+$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP1 -O $SCRIPT_DIR/$RDBMSZIP1_NAME
+
+RDBMSZIP2=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS2|cut -f3 -d "|"`
+RDBMSZIP2_NAME=`echo $RDBMSZIP2|rev|cut -f1 -d '/'|rev`
+$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP2 -O $SCRIPT_DIR/$RDBMSZIP2_NAME	
+cd $SCRIPT_DIR
+$UNZIP $RDBMSZIP1_NAME
+$UNZIP $RDBMSZIP2_NAME
 	
 	
