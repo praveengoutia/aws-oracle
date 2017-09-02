@@ -38,3 +38,5 @@ GIBASEDIR|Oracle11204|/u01/app/grid
 ORACLEBASEDIR|Oracle11204|/u01/app/oracle
 GIHOMEDIR|Oracle11204|/u01/app/grid/11.2.0.4
 ORACLEHOMEDIR|Oracle11204|/u01/app/oracle/product/11.2.0.4/dbhome_1
+ORAINVDIR|/u01/app/oraInventory
+STAGEDIR|/u01/app/stage
