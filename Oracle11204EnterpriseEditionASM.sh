@@ -171,7 +171,7 @@ $WGET $EC2METADATA_BASE/local-ipv4 -O $SCRIPT_DIR/local-ipv4
 echo "`head $SCRIPT_DIR/local-ipv4`     $HOSTNAME">>/etc/hosts
 
 ##Create directories for Oracle installation V
-V_ORAVERSION=`echo $INSTALLCODE|awk '{print sunstr($0,0,11) }'`
+V_ORAVERSION=`echo $INSTALLCODE|awk '{print substr($0,0,11) }'`
 V_GRIDBASE=`grep $V_ORAVERSION $SOFTWAREREPOMD|grep GIBASEDIR|cut -f3 -d "|"`
 V_ORACLEBASE=`grep $V_ORAVERSION $SOFTWAREREPOMD|grep ORACLEBASEDIR|cut -f3 -d "|"`
 V_GRIDHOME=`grep $V_ORAVERSION $SOFTWAREREPOMD|grep GIHOMEDIR|cut -f3 -d "|"`
@@ -218,5 +218,3 @@ $WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP2 
 cd $V_STAGEDIR
 $UNZIP $RDBMSZIP1_NAME
 $UNZIP $RDBMSZIP2_NAME
-	
-	
