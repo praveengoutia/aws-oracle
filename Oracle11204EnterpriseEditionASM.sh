@@ -52,7 +52,8 @@ declare DEVFRA="/dev/xvdd"
 declare DATADG_NAME="DATA"
 declare FRADG_NAME="FRA"
 
-
+declare GI_USER="grid"
+declare ORACLE_USER="oracle"
 
 #Run yum update -y 
 $YUM update -y
@@ -169,28 +170,52 @@ $WGET $EC2METADATA_BASE/local-ipv4 -O $SCRIPT_DIR/local-ipv4
 
 echo "`head $SCRIPT_DIR/local-ipv4`     $HOSTNAME">>/etc/hosts
 
+##Create directories for Oracle installation V
+V_ORAVERSION=`echo $INSTALLCODE|awk '{print sunstr($0,0,11) }'`
+V_GRIDBASE=`grep $V_ORAVERSION $SOFTWAREREPOMD|grep GIBASEDIR|cut -f3 -d "|"`
+V_ORACLEBASE=`grep $V_ORAVERSION $SOFTWAREREPOMD|grep ORACLEBASEDIR|cut -f3 -d "|"`
+V_GRIDHOME=`grep $V_ORAVERSION $SOFTWAREREPOMD|grep GIHOMEDIR|cut -f3 -d "|"`
+V_ORACLEHOME=`grep $V_ORAVERSION $SOFTWAREREPOMD|grep ORACLEHOMEDIR|cut -f3 -d "|"`
+V_ORAINV=`grep ORAINVDIR $SOFTWAREREPOMD|cut -f2 -d "|"`
+V_STAGEDIR=`grep STAGEDIR $SOFTWAREREPOMD|cut -f2 -d "|"`
+
+mkdir -p $V_GRIDBASE
+mkdir -p $V_GRIDHOME
+mkdir -p $V_ORACLEBASE
+mkdir -p $V_ORACLEHOME
+mkdir -p $V_ORAINV
+mkdir -p $V_STAGEDIR
+
+chown $ORACLE_USER: $V_ORACLEHOME
+chown $ORACLE_USER: $V_ORACLEBASE
+chown $ORACLE_USER: $V_ORAINV
+chown $GI_USER: $V_GRIDHOME
+chown $GI_USER: $V_GRIDBASE
+chown $GI_USER: $V_STAGEDIR
+chmod 775 $V_STAGEDIR
+
 ##Download software
 if [ "$CFPARAM_ORASTORAGETYPE" = "ASM" ]; then
 	GIZIP1=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep GRID1|cut -f3 -d "|"`
 	GIZIP1_NAME=`echo $GIZIP1|rev|cut -f1 -d '/'|rev`
-	$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $GIZIP1 -O $SCRIPT_DIR/$GIZIP1_NAME
+	$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $GIZIP1 -O $V_STAGEDIR/$GIZIP1_NAME
 	
 	GIZIP2=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep GRID2|cut -f3 -d "|"`
 	GIZIP2_NAME=`echo $GIZIP2|rev|cut -f1 -d '/'|rev`
-	$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $GIZIP2 -O $SCRIPT_DIR/$GIZIP2_NAME	
-	cd $SCRIPT_DIR
+	$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $GIZIP2 -O $V_STAGEDIR/$GIZIP2_NAME	
+	cd $V_STAGEDIR
 	$UNZIP $GIZIP1_NAME
 	$UNZIP $GIZIP2_NAME	
 fi
 
 RDBMSZIP1=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS1|cut -f3 -d "|"`
 RDBMSZIP1_NAME=`echo $RDBMSZIP1|rev|cut -f1 -d '/'|rev`
-$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP1 -O $SCRIPT_DIR/$RDBMSZIP1_NAME
+$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP1 -O $V_STAGEDIR/$RDBMSZIP1_NAME
 
 RDBMSZIP2=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS2|cut -f3 -d "|"`
 RDBMSZIP2_NAME=`echo $RDBMSZIP2|rev|cut -f1 -d '/'|rev`
-$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP2 -O $SCRIPT_DIR/$RDBMSZIP2_NAME	
-cd $SCRIPT_DIR
+$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP2 -O $V_STAGEDIR/$RDBMSZIP2_NAME	
+cd $V_STAGEDIR
 $UNZIP $RDBMSZIP1_NAME
 $UNZIP $RDBMSZIP2_NAME
 	
