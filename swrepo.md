@@ -40,3 +40,5 @@ GIHOMEDIR|Oracle11204|/u01/app/grid/11.2.0.4
 ORACLEHOMEDIR|Oracle11204|/u01/app/oracle/product/11.2.0.4/dbhome_1
 ORAINVDIR|/u01/app/oraInventory
 STAGEDIR|/u01/app/stage
+GIRSP|Oracle11204|grid_install_11204_ec21.rsp
+GIRSP|Oracle12102|grid_install_12102_ec21.rsp
