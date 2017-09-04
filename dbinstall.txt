@@ -1,0 +1,243 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Prav CF Template, VPC with subnets. Pass.",
+    "Parameters": {
+	        "CFAAVPC01": {
+            "Description": "Select VPC",
+            "Type" : "AWS::EC2::VPC::Id"
+        },
+		"CFAAVPCCIDR": {
+            "Default": "10.10.0.0/16",
+            "Description": "CIDR of VPC",
+            "Type": "String",
+            "MinLength": "9",
+            "MaxLength": "18",
+            "AllowedPattern": "[1]{1}[0,7]{1}[2]{0,1}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0]\\/[1][6]",
+            "ConstraintDescription": "Must be a valid CidrBlock."
+		},		
+	       "CFABDBSUB01": {
+            "Description": "Select Subnet",
+            "Type" : "AWS::EC2::Subnet::Id"
+        },
+	       "CFACAMIID": {
+            "Description": "Provide AMI ID",
+			"Type" : "String"			
+        },
+	       "CFADDBVERSION": {
+            "Description": "Select Database Version",
+			"AllowedValues": [
+			"Oracle 11.2.0.4 Enterprise Edition",
+			"Oracle 11.2.0.4 Standard Edition",
+			"Oracle 12.1.0.2 Enterprise Edition",
+			"Oracle 12.1.0.2 Standard Edition"
+			],
+			"Type" : "String"
+        },
+	       "CFAESTORAGETYPE": {
+            "Description": "Select Storage Type",
+			"AllowedValues": [
+			"File System",
+			"ASM"
+			],
+			"Type" : "String"
+        },
+	       "CFAFDATASIZE": {
+            "Description": "Provide Size of data mount point/diskgroup in GB",
+			"Type" : "String",
+			"AllowedPattern" : "[0-9]{3,5}",
+			"MinLength": "3",
+            "MaxLength": "5"
+        },
+	       "CFAGFRASIZE": {
+            "Description": "Provide Size of FRA mount point/diskgroup in GB",
+			"Type" : "String",
+			"AllowedPattern" : "[0-9]{3,5}",
+			"MinLength": "3",
+            "MaxLength": "5"
+        },	
+	       "CFAGORASID": {
+            "Description": "Oracle database SID",
+			"Type" : "String",
+			"AllowedPattern" : "[a-z,A-Z]{1}[a-z,A-Z,0-9]{3,7}",
+			"MinLength": "4",
+            "MaxLength": "8"			
+        },	
+	       "CFAHSYSPASSWORD": {
+            "Description": "SYS Password",
+			"Type" : "String",
+			"NoEcho" : "true"
+        },	
+	       "CFAILISTENERPORT": {
+            "Description": "Listener Port",
+			"Type" : "String",
+			"AllowedPattern" : "[1-9]{1}[0-9]{3,4}",
+			"MinLength": "4",
+            "MaxLength": "5"				
+        },
+	       "CFAJCHARACTERSET": {
+            "Description": "Character Set",
+			"Type" : "String"
+        },
+	       "CFAJNCHARACTERSET": {
+            "Description": "National Character Set",
+			"Type" : "String"
+        },
+	       "CFAJTIMEZONE": {
+            "Description": "Time Zone",
+			"Type" : "String"
+        },
+	     "CFALBLOCKSIZE": {
+            "Description": "Time Zone",
+			"AllowedValues": ["8192","16384","32768"],
+			"Type" : "String"
+        },
+		"CFAMEC2KEYPAIR": {
+			"Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+			"Type": "AWS::EC2::KeyPair::KeyName",
+			"Default":"PRAVEEN_SG_KEY",
+			"ConstraintDescription" : "must be the name of an existing EC2 KeyPair."
+		},
+		"CFANREPOUSER":{
+            "Description": "Software repository username",
+			"Type" : "String",
+			"MinLength": "4",
+            "MaxLength": "20"			
+		},
+		"CFAOREPOPASSWD":{
+            "Description": "Software repository password",
+			"Type" : "String",
+			"MinLength": "4",
+            "MaxLength": "20",
+			"NoEcho" : "true"			
+		}		
+	},
+    "Resources": {
+	"AAAORAEC2SG":
+		{
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+			"GroupName" : { "Fn::Join" : [ "_", [{ "Ref" : "AWS::StackName" },"oraec2sg" ] ] },
+			"GroupDescription" : "Security Group for bastion server ssh access.",
+			"Tags" : [ {"Key" : "Name", "Value" : { "Fn::Join" : [ "_", [{ "Ref" : "AWS::StackName" },"SGBastion" ] ] }} ],
+			"VpcId" : {"Ref": "CFAAVPC01"},
+			"SecurityGroupIngress" : [ {
+				"IpProtocol" : "tcp",
+				"FromPort" : "22",
+				"ToPort" : "22",
+				"CidrIp" : { "Ref" : "CFAAVPCCIDR" }
+				},
+				{
+				"IpProtocol" : "tcp",
+				"FromPort" : { "Ref" : "CFAILISTENERPORT" },
+				"ToPort" : { "Ref" : "CFAILISTENERPORT" },
+				"CidrIp" : { "Ref" : "CFAAVPCCIDR" }
+				}				
+				]
+			}	
+		},
+		"AABORAEC2INST": {
+			"Type" : "AWS::EC2::Instance",
+			"Properties" : {
+				"BlockDeviceMappings" : [
+					{
+						"DeviceName" : "/dev/sda1",
+						"Ebs" : { "VolumeSize" : "20" }
+					},			
+					{
+						"DeviceName" : "/dev/sdb",
+						"Ebs" : { "VolumeSize" : "120" }
+					},
+					{
+						"DeviceName" : "/dev/sdc",
+						"Ebs" : { "VolumeSize" : { "Ref" : "CFAFDATASIZE" } }
+					},
+					{
+						"DeviceName" : "/dev/sdd",
+						"Ebs" : { "VolumeSize" : { "Ref" : "CFAGFRASIZE" } }
+					}						
+				],
+				"EbsOptimized" : "false",
+				"ImageId" : { "Ref" : "CFACAMIID" },
+				"InstanceInitiatedShutdownBehavior" : "stop",
+				"InstanceType" : "t2.xlarge",
+				"KeyName" : {"Ref" : "CFAMEC2KEYPAIR" },
+				"SubnetId" : {"Ref" : "CFABDBSUB01" },
+				"Tags" : [ {"Key" : "Name", "Value" : { "Fn::Join" : [ "_", [{ "Ref" : "AWS::StackName" },"ec2oradb" ] ] }} ],
+				"SecurityGroupIds":	[ {"Ref" : "AAAORAEC2SG" } ],
+				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+							"#!/bin/bash -xe\n",
+							"mkdir -p /root/rsoradba \n",
+							"touch /root/rsoradba/inputparameters.txt \n",
+							"echo \"CFADDBVERSION:",
+							{ "Ref" : "CFADDBVERSION" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"CFAESTORAGETYPE:",
+							{ "Ref" : "CFAESTORAGETYPE" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"CFAFDATASIZE:",
+							{ "Ref" : "CFAFDATASIZE" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"CFAGFRASIZE:",
+							{ "Ref" : "CFAGFRASIZE" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"CFAGORASID:",
+							{ "Ref" : "CFAGORASID" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"CFAHSYSPASSWORD:",
+							{ "Ref" : "CFAHSYSPASSWORD" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"CFANREPOUSER:",
+							{ "Ref" : "CFANREPOUSER" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"CFAOREPOPASSWD:",
+							{ "Ref" : "CFAOREPOPASSWD" },
+							"\">>/root/rsoradba/inputparameters.txt \n",								
+							"echo \"CFAILISTENERPORT:",
+							{ "Ref" : "CFAILISTENERPORT" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"CFAJCHARACTERSET:",
+							{ "Ref" : "CFAJCHARACTERSET" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"CFAJNCHARACTERSET:",
+							{ "Ref" : "CFAJNCHARACTERSET" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"CFAJTIMEZONE:",
+							{ "Ref" : "CFAJTIMEZONE" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"CFALBLOCKSIZE:",
+							{ "Ref" : "CFALBLOCKSIZE" },
+							"\">>/root/rsoradba/inputparameters.txt \n",
+							"echo \"ZONE=",
+							{ "Ref" : "CFAJTIMEZONE" },
+							"\">/etc/sysconfig/clock \n",
+							"ln -sf /usr/share/zoneinfo/",
+							{ "Ref" : "CFAJTIMEZONE" },
+							" /etc/localtime \n",
+							"cp -p /etc/sysconfig/network /root/rsoradba \n",
+							"grep -v HOSTNAME /root/rsoradba/network > /etc/sysconfig/network \n",
+							"echo \"HOSTNAME=",
+							{ "Fn::Join" : [ "", [{ "Ref" : "AWS::StackName" },"ec2oradb" ] ] },
+							"\">>/etc/sysconfig/network \n",
+							"hostname ",
+							{ "Fn::Join" : [ "", [{ "Ref" : "AWS::StackName" },"ec2oradb" ] ] },
+							"\n",
+							"#yum update -y \n",
+							"yum install git -y \n",
+							"cd /root/rsoradba \n",
+							"wget https://raw.githubusercontent.com/praveengoutia/aws-oracle/master/test.sh \n",
+							"chmod 755 test.sh \n",
+							"/root/rsoradba/test.sh"
+							]
+						]
+					}
+				}				
+			}
+		}		
+	},
+	"Outputs" : {
+	"AAAOPEC2PRVIP" : {
+    "Description" : "Private IP of EC2 Instance",
+    "Value" : { "Fn::GetAtt" : [ "AABORAEC2INST", "PrivateIp" ] }
+  }
+}	
+}	
