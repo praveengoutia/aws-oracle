@@ -1,0 +1,8 @@
+instance_name=+ASM
+instance_type=ASM
+memory_max_target=1500M
+memory_target=1500M
+db_unique_name=+ASM
+asm_diskstring='ORCL:*'
+asm_diskgroups='DATA','FRA'
+processes=500
