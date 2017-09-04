@@ -239,7 +239,7 @@ if [ "$CFPARAM_ORASTORAGETYPE" = "ASM" ]; then
 	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/srvctl add asm -l LISTENER -d 'ORCL:*'"
 	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/srvctl start asm"
 	
-	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/sqlplus /nolog @/tmp/addASMDiskgroups.sql"
+	$RUNUSER -l $GI_USER -c "export ORACLE_SID=+ASM;export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/sqlplus /nolog @/tmp/addASMDiskgroups.sql"
 	V_ASMSPFILE=`cat /tmp/spfilename.txt|$SED '/^$/d'`
 	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/srvctl modify asm -p $V_ASMSPFILE"
 	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/srvctl stop asm"	
