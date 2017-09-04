@@ -210,14 +210,19 @@ if [ "$CFPARAM_ORASTORAGETYPE" = "ASM" ]; then
 	cd $V_STAGEDIR
 	$RUNUSER -l $GI_USER -c "$UNZIP $V_STAGEDIR/$GIZIP1_NAME -d $V_STAGEDIR"
 	$RUNUSER -l $GI_USER -c "$UNZIP $V_STAGEDIR/$GIZIP2_NAME -d $V_STAGEDIR"
-	RSPFILE=`grep GIRSP $SOFTWAREREPOMD|grep $V_ORAVERSION|cut -f2 -d "|"`
-	$SED -i -e s/VHOSTNAME/$HOSTNAME/ $RSPFILE
-	$SED -i -e s/VINVLOCATION/$V_ORAINV/ $RSPFILE	
-	$SED -i -e s/VGIBASE/$V_GRIDBASE/ $RSPFILE
-	$SED -i -e s/VGIHOME/$V_GRIDHOME/ $RSPFILE	
-	$SED -i -e s/VPASSWORD/$CFPARAM_SYSPASSWORD/ $RSPFILE
+	set -x
+	RSPFILE=`grep GIRSP $SOFTWAREREPOMD|grep $V_ORAVERSION|cut -f3 -d "|"`
+	cp -p $GIT_DIR/$RSPFILE $V_STAGEDIR/grid/response
+	RSPFILE="$V_STAGEDIR/grid/response/"$RSPFILE
+	chown $GI_USER: $RSPFILE
 	
-	$RUNUSER -l $GI_USER -c "$V_STAGEDIR/grid/runInstaller  -silent -responseFile  $GIT_DIR/grid_install_ec2.rsp -waitforcompletion -showProgress"
+	$SED -i  s#VHOSTNAME#$HOSTNAME# $RSPFILE
+	$SED -i  s#VINVLOCATION#$V_ORAINV# $RSPFILE	
+	$SED -i  s#VGIBASE#$V_GRIDBASE# $RSPFILE
+	$SED -i  s#VGIHOME#$V_GRIDHOME# $RSPFILE	
+	$SED -i  s#VPASSWORD#$CFPARAM_SYSPASSWORD# $RSPFILE
+	
+	$RUNUSER -l $GI_USER -c "$V_STAGEDIR/grid/runInstaller  -silent -responseFile  $RSPFILE -waitforcompletion -showProgress"
 	
 	$V_ORAINV/orainstRoot.sh
 	$V_GRIDHOME/root.sh
@@ -229,7 +234,7 @@ if [ "$CFPARAM_ORASTORAGETYPE" = "ASM" ]; then
 	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/lsnrctl status"
 	cp -p $GIT_DIR/init+ASM.ora $V_GRIDHOME/dbs
 	chown $GI_USER: $V_GRIDHOME/dbs/init+ASM.ora
-	cp -p $GIT_DIR/add_DATADG.sql /tmp/addASMDiskgroups.sql
+	cp -p $GIT_DIR/addASMDiskgroups.sql /tmp/addASMDiskgroups.sql
 	chown $GI_USER: /tmp/addASMDiskgroups.sql
 	
 	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/srvctl add asm -l LISTENER -d 'ORCL:*'"
@@ -240,26 +245,24 @@ if [ "$CFPARAM_ORASTORAGETYPE" = "ASM" ]; then
 	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/srvctl modify asm -p $V_ASMSPFILE"
 	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/srvctl stop asm"	
 	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/srvctl start asm"
-	rm -f /tmp/add_FRADG.sql /tmp/addASMDiskgroups.sql /tmp/spfilename.txt
+	rm -f  /tmp/addASMDiskgroups.sql /tmp/spfilename.txt
 	
 fi
 
-RDBMSZIP1=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS1|cut -f3 -d "|"`
-RDBMSZIP1_NAME=`echo $RDBMSZIP1|rev|cut -f1 -d '/'|rev`
-$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP1 -O $V_STAGEDIR/$RDBMSZIP1_NAME
-
-RDBMSZIP2=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS2|cut -f3 -d "|"`
-RDBMSZIP2_NAME=`echo $RDBMSZIP2|rev|cut -f1 -d '/'|rev`
-$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP2 -O $V_STAGEDIR/$RDBMSZIP2_NAME	
-cd $V_STAGEDIR
-chown $ORACLE_USER: $V_STAGEDIR/$RDBMSZIP1_NAME
-chown $ORACLE_USER: $V_STAGEDIR/$RDBMSZIP2_NAME
-
-$RUNUSER -l $ORACLE_USER -c "$UNZIP $V_STAGEDIR/$RDBMSZIP1_NAME -d $V_STAGEDIR"
-$RUNUSER -l $ORACLE_USER -c "$UNZIP $V_STAGEDIR/$RDBMSZIP2_NAME -d $V_STAGEDIR"
+#RDBMSZIP1=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS1|cut -f3 -d "|"`
+#RDBMSZIP1_NAME=`echo $RDBMSZIP1|rev|cut -f1 -d '/'|rev`
+#$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP1 -O $V_STAGEDIR/$RDBMSZIP1_NAME
+#
+#RDBMSZIP2=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS2|cut -f3 -d "|"`
+#RDBMSZIP2_NAME=`echo $RDBMSZIP2|rev|cut -f1 -d '/'|rev`
+#$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP2 -O $V_STAGEDIR/$RDBMSZIP2_NAME	
+#cd $V_STAGEDIR
+#chown $ORACLE_USER: $V_STAGEDIR/$RDBMSZIP1_NAME
+#chown $ORACLE_USER: $V_STAGEDIR/$RDBMSZIP2_NAME
+#
+######$RUNUSER -l $ORACLE_USER -c "$UNZIP $V_STAGEDIR/$RDBMSZIP1_NAME -d $V_STAGEDIR"
+######$RUNUSER -l $ORACLE_USER -c "$UNZIP $V_STAGEDIR/$RDBMSZIP2_NAME -d $V_STAGEDIR"
 	
-$UNZIP $RDBMSZIP1_NAME
-$UNZIP $RDBMSZIP2_NAME
 
 
 
