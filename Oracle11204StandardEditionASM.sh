@@ -1,1 +1,0 @@
-#Oracle11204StandardEditionASM.sh
