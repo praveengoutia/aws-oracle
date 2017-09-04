@@ -1,3 +1,6 @@
+CONNECT / as sysasm
+
+
 CREATE DISKGROUP DATA EXTERNAL REDUNDANCY DISK 'ORCL:DATA001'
 ATTRIBUTE 'au_size'='1M',
 'compatible.asm' = '11.2', 
@@ -22,4 +25,5 @@ create spfile='+DATA' from pfile;
 spool /tmp/spfilename.txt'
 select '+DATA/ASM/ASMPARAMETERFILE/'||NAME from v$ASM_ALIAS where NAME like 'REGISTRY%';
 spool off
+
 Exit;
