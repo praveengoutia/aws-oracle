@@ -14,4 +14,12 @@ ATTRIBUTE 'au_size'='1M',
 --check free space in DG.
 SELECT name, total_mb, free_mb,  round(free_mb/total_mb*100,2) as "Free percentage"  FROM v$asm_diskgroup;
 
+set pages 200 lines 400
+set echo off
+set feedback off
+set head off
+create spfile='+DATA' from pfile;
+spool /tmp/spfilename.txt'
+select '+DATA/ASM/ASMPARAMETERFILE/'||NAME from v$ASM_ALIAS where NAME like 'REGISTRY%';
+spool off
 Exit;
