@@ -8,6 +8,8 @@ declare WGET=/usr/bin/wget
 declare GIT=/usr/bin/git
 declare ORACLEASMLIB=/etc/init.d/oracleasm
 declare UNZIP=/usr/bin/unzip
+declare RUNUSER=/sbin/runuser
+declare SED=/bin/sed
 
 declare SCRIPT_DIR="/root/rsoradba"
 declare GIT_DIR="$SCRIPT_DIR/aws-oracle"
@@ -129,7 +131,7 @@ mount -a
 
 
 ##DEVDATA="/dev/xvdc"
-sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${DEVDATA}
+$SED -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${DEVDATA}
   o # clear the in memory partition table
   n # new partition
   p # primary partition
@@ -142,7 +144,7 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${DEVDATA}
 EOF
 
 ##DEVFRA="/dev/xvdd"
-sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${DEVFRA}
+$SED -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${DEVFRA}
   o # clear the in memory partition table
   n # new partition
   p # primary partition
@@ -188,7 +190,7 @@ mkdir -p $V_STAGEDIR
 
 chown $ORACLE_USER: $V_ORACLEHOME
 chown $ORACLE_USER: $V_ORACLEBASE
-chown $ORACLE_USER: $V_ORAINV
+chown $GI_USER: $V_ORAINV
 chown $GI_USER: $V_GRIDHOME
 chown $GI_USER: $V_GRIDBASE
 chown $GI_USER: $V_STAGEDIR
@@ -199,13 +201,47 @@ if [ "$CFPARAM_ORASTORAGETYPE" = "ASM" ]; then
 	GIZIP1=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep GRID1|cut -f3 -d "|"`
 	GIZIP1_NAME=`echo $GIZIP1|rev|cut -f1 -d '/'|rev`
 	$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $GIZIP1 -O $V_STAGEDIR/$GIZIP1_NAME
+	chown $GI_USER: $V_STAGEDIR/$GIZIP1_NAME
 	
 	GIZIP2=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep GRID2|cut -f3 -d "|"`
 	GIZIP2_NAME=`echo $GIZIP2|rev|cut -f1 -d '/'|rev`
 	$WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $GIZIP2 -O $V_STAGEDIR/$GIZIP2_NAME	
+	chown $GI_USER: $V_STAGEDIR/$GIZIP2_NAME	
 	cd $V_STAGEDIR
-	$UNZIP $GIZIP1_NAME
-	$UNZIP $GIZIP2_NAME	
+	$RUNUSER -l $GI_USER -c "$UNZIP $V_STAGEDIR/$GIZIP1_NAME -d $V_STAGEDIR"
+	$RUNUSER -l $GI_USER -c "$UNZIP $V_STAGEDIR/$GIZIP2_NAME -d $V_STAGEDIR"
+	RSPFILE=`grep GIRSP $SOFTWAREREPOMD|grep $V_ORAVERSION|cut -f2 -d "|"`
+	$SED -i -e s/VHOSTNAME/$HOSTNAME/ $RSPFILE
+	$SED -i -e s/VINVLOCATION/$V_ORAINV/ $RSPFILE	
+	$SED -i -e s/VGIBASE/$V_GRIDBASE/ $RSPFILE
+	$SED -i -e s/VGIHOME/$V_GRIDHOME/ $RSPFILE	
+	$SED -i -e s/VPASSWORD/$CFPARAM_SYSPASSWORD/ $RSPFILE
+	
+	$RUNUSER -l $GI_USER -c "$V_STAGEDIR/grid/runInstaller  -silent -responseFile  $GIT_DIR/grid_install_ec2.rsp -waitforcompletion -showProgress"
+	
+	$V_ORAINV/orainstRoot.sh
+	$V_GRIDHOME/root.sh
+	$V_GRIDHOME/bin/crsctl start has
+	$V_GRIDHOME/bin/crsctl start res -all
+	$V_GRIDHOME/bin/crsctl status res -t
+	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/srvctl add listener -l LISTENER -p TCP:$CFPARAM_LISTENERPORT -o $V_GRIDHOME"
+	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/srvctl start listener -l LISTENER"
+	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/lsnrctl status"
+	cp -p $GIT_DIR/init+ASM.ora $V_GRIDHOME/dbs
+	chown $GI_USER: $V_GRIDHOME/dbs/init+ASM.ora
+	cp -p $GIT_DIR/add_DATADG.sql /tmp/addASMDiskgroups.sql
+	chown $GI_USER: /tmp/addASMDiskgroups.sql
+	
+	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/srvctl add asm -l LISTENER -d 'ORCL:*'"
+	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/srvctl start asm"
+	
+	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$ORACLE_HOME/bin:$PATH;sqlplus /nolog @/tmp/addASMDiskgroups.sql"
+	V_ASMSPFILE=`cat /tmp/spfilename.txt|$SED '/^$/d'`
+	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/srvctl modify asm -p $V_ASMSPFILE"
+	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/srvctl stop asm"	
+	$RUNUSER -l $GI_USER -c "$V_GRIDHOME/bin/srvctl start asm"
+	rm -f /tmp/add_FRADG.sql /tmp/addASMDiskgroups.sql /tmp/spfilename.txt
+	
 fi
 
 RDBMSZIP1=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS1|cut -f3 -d "|"`
@@ -216,5 +252,15 @@ RDBMSZIP2=`grep $INSTALLCODE $SOFTWAREREPOMD|grep $LINUX_KERNEL|grep RDBMS2|cut 
 RDBMSZIP2_NAME=`echo $RDBMSZIP2|rev|cut -f1 -d '/'|rev`
 $WGET --http-user=$CFPARAM_REPOUSER --http-password=$CFPARAM_REPOPWD $RDBMSZIP2 -O $V_STAGEDIR/$RDBMSZIP2_NAME	
 cd $V_STAGEDIR
+chown $ORACLE_USER: $V_STAGEDIR/$RDBMSZIP1_NAME
+chown $ORACLE_USER: $V_STAGEDIR/$RDBMSZIP2_NAME
+
+$RUNUSER -l $ORACLE_USER -c "$UNZIP $V_STAGEDIR/$RDBMSZIP1_NAME -d $V_STAGEDIR"
+$RUNUSER -l $ORACLE_USER -c "$UNZIP $V_STAGEDIR/$RDBMSZIP2_NAME -d $V_STAGEDIR"
+	
 $UNZIP $RDBMSZIP1_NAME
 $UNZIP $RDBMSZIP2_NAME
+
+
+
+	
