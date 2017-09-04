@@ -226,25 +226,24 @@ if [ "$CFPARAM_ORASTORAGETYPE" = "ASM" ]; then
 	
 	$V_ORAINV/orainstRoot.sh
 	$V_GRIDHOME/root.sh
-	$V_GRIDHOME/bin/crsctl start has
 	$V_GRIDHOME/bin/crsctl start res -all
 	$V_GRIDHOME/bin/crsctl status res -t
-	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$ORACLE_HOME/bin:$PATH;$V_GRIDHOME/bin/srvctl add listener -l LISTENER -p TCP:$CFPARAM_LISTENERPORT -o $V_GRIDHOME"
-	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$ORACLE_HOME/bin:$PATH;$V_GRIDHOME/bin/srvctl start listener -l LISTENER"
-	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$ORACLE_HOME/bin:$PATH;$V_GRIDHOME/bin/lsnrctl status"
+	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/srvctl add listener -l LISTENER -p TCP:$CFPARAM_LISTENERPORT -o $V_GRIDHOME"
+	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/srvctl start listener -l LISTENER"
+	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/lsnrctl status"
 	cp -p $GIT_DIR/init+ASM.ora $V_GRIDHOME/dbs
 	chown $GI_USER: $V_GRIDHOME/dbs/init+ASM.ora
 	cp -p $GIT_DIR/addASMDiskgroups.sql /tmp/addASMDiskgroups.sql
 	chown $GI_USER: /tmp/addASMDiskgroups.sql
 	
-	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$ORACLE_HOME/bin:$PATH;$V_GRIDHOME/bin/srvctl add asm -l LISTENER -d 'ORCL:*'"
-	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$ORACLE_HOME/bin:$PATH;$V_GRIDHOME/bin/srvctl start asm"
+	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/srvctl add asm -l LISTENER -d 'ORCL:*'"
+	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/srvctl start asm"
 	
-	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$ORACLE_HOME/bin:$PATH;sqlplus /nolog @/tmp/addASMDiskgroups.sql"
+	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/sqlplus /nolog @/tmp/addASMDiskgroups.sql"
 	V_ASMSPFILE=`cat /tmp/spfilename.txt|$SED '/^$/d'`
-	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$ORACLE_HOME/bin:$PATH;$V_GRIDHOME/bin/srvctl modify asm -p $V_ASMSPFILE"
-	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$ORACLE_HOME/bin:$PATH;$V_GRIDHOME/bin/srvctl stop asm"	
-	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$ORACLE_HOME/bin:$PATH;$V_GRIDHOME/bin/srvctl start asm"
+	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/srvctl modify asm -p $V_ASMSPFILE"
+	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/srvctl stop asm"	
+	$RUNUSER -l $GI_USER -c "export ORACLE_HOME=$V_GRIDHOME;export PATH=$V_GRIDHOME/bin:$PATH;$V_GRIDHOME/bin/srvctl start asm"
 	rm -f  /tmp/addASMDiskgroups.sql /tmp/spfilename.txt
 	
 fi
