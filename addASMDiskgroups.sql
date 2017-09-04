@@ -22,7 +22,7 @@ set echo off
 set feedback off
 set head off
 create spfile='+DATA' from pfile;
-spool /tmp/spfilename.txt'
+spool /tmp/spfilename.txt
 select '+DATA/ASM/ASMPARAMETERFILE/'||NAME from v$ASM_ALIAS where NAME like 'REGISTRY%';
 spool off
 
