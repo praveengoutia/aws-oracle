@@ -97,6 +97,12 @@
 			"Default":"PRAVEEN_SG_KEY",
 			"ConstraintDescription" : "must be the name of an existing EC2 KeyPair."
 		},
+	   "CFANREPOURL":{
+            "Description": "Software repository address",
+			"Type" : "String",
+			"MinLength": "4",
+            "MaxLength": "100"			
+		},
 		"CFANREPOUSER":{
             "Description": "Software repository username",
 			"Type" : "String",
